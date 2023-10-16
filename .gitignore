@@ -1,11 +1,15 @@
+
+# Ignore the .gitignore file itself
+.gitignore
+
 # Node modules
 node_modules/
-
-# Environment variables
-.env
 
 # Logs
 *.log
 
-# Generated Files
-dist/
+# Other files and directories to ignore
+.DS_Store
+.idea/
+
+.env
