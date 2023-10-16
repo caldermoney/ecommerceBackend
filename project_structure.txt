@@ -1,0 +1,561 @@
+--- Folder Structure ---
+README.md
+Server.js
+[config]
+    └── connection.js
+[db]
+    └── schema.sql
+[models]
+    ├── Category.js
+    ├── Index.js
+    ├── Product.js
+    ├── ProductTag.js
+    └── Tag.js
+[node_modules]
+[routes]
+    ├── [api]
+        ├── category-routes.js
+        ├── index.js
+        ├── product-routes.js
+        └── tag-routes.js
+    └── index.js
+[seeds]
+    ├── category-seeds.js
+    ├── index.js
+    ├── product-seeds.js
+    ├── product-tag-seeds.js
+    └── tag-seeds.js
+
+--- File Contents ---
+
+--- File: README.md ---
+# ecommerceBackend
+
+--- File: Server.js ---
+const express = require('express');
+const routes = require('./routes');
+// import sequelize connection
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(routes);
+
+// sync sequelize models to the database, then turn on the server
+app.listen(PORT, () => {
+  console.log(`App listening on port ${PORT}!`);
+});
+
+--- File: config/connection.js ---
+require('dotenv').config();
+
+const Sequelize = require('sequelize');
+
+const sequelize = process.env.JAWSDB_URL
+  ? new Sequelize(process.env.JAWSDB_URL)
+  : new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PW, {
+      host: 'localhost',
+      dialect: 'mysql',
+      dialectOptions: {
+        decimalNumbers: true,
+      },
+    });
+
+module.exports = sequelize;
+
+--- File: db/schema.sql ---
+DROP DATABASE IF EXISTS ecommerce_db;
+CREATE DATABASE ecommerce_db;
+
+USE ecommerce_db;
+
+CREATE TABLE Categories (
+    id INT NOT NULL,
+    category_name 
+)
+
+--- File: models/Category.js ---
+const { Model, DataTypes } = require('sequelize');
+
+const sequelize = require('../config/connection.js');
+
+class Category extends Model {}
+
+Category.init(
+  {
+    // define columns
+  },
+  {
+    sequelize,
+    timestamps: false,
+    freezeTableName: true,
+    underscored: true,
+    modelName: 'category',
+  }
+);
+
+module.exports = Category;
+
+--- File: models/Index.js ---
+// import models
+const Product = require('./Product');
+const Category = require('./Category');
+const Tag = require('./Tag');
+const ProductTag = require('./ProductTag');
+
+// Products belongsTo Category
+
+// Categories have many Products
+
+// Products belongToMany Tags (through ProductTag)
+
+// Tags belongToMany Products (through ProductTag)
+
+module.exports = {
+  Product,
+  Category,
+  Tag,
+  ProductTag,
+};
+
+--- File: models/Product.js ---
+// import important parts of sequelize library
+const { Model, DataTypes } = require('sequelize');
+// import our database connection from config.js
+const sequelize = require('../config/connection');
+
+// Initialize Product model (table) by extending off Sequelize's Model class
+class Product extends Model {}
+
+// set up fields and rules for Product model
+Product.init(
+  {
+    // define columns
+  },
+  {
+    sequelize,
+    timestamps: false,
+    freezeTableName: true,
+    underscored: true,
+    modelName: 'product',
+  }
+);
+
+module.exports = Product;
+
+--- File: models/ProductTag.js ---
+const { Model, DataTypes } = require('sequelize');
+
+const sequelize = require('../config/connection');
+
+class ProductTag extends Model {}
+
+ProductTag.init(
+  {
+    // define columns
+  },
+  {
+    sequelize,
+    timestamps: false,
+    freezeTableName: true,
+    underscored: true,
+    modelName: 'product_tag',
+  }
+);
+
+module.exports = ProductTag;
+
+--- File: models/Tag.js ---
+const { Model, DataTypes } = require('sequelize');
+
+const sequelize = require('../config/connection.js');
+
+class Tag extends Model {}
+
+Tag.init(
+  {
+    // define columns
+  },
+  {
+    sequelize,
+    timestamps: false,
+    freezeTableName: true,
+    underscored: true,
+    modelName: 'tag',
+  }
+);
+
+module.exports = Tag;
+
+--- File: routes/api/category-routes.js ---
+const router = require('express').Router();
+const { Category, Product } = require('../../models');
+
+// The `/api/categories` endpoint
+
+router.get('/', (req, res) => {
+  // find all categories
+  // be sure to include its associated Products
+});
+
+router.get('/:id', (req, res) => {
+  // find one category by its `id` value
+  // be sure to include its associated Products
+});
+
+router.post('/', (req, res) => {
+  // create a new category
+});
+
+router.put('/:id', (req, res) => {
+  // update a category by its `id` value
+});
+
+router.delete('/:id', (req, res) => {
+  // delete a category by its `id` value
+});
+
+module.exports = router;
+
+--- File: routes/api/index.js ---
+const router = require('express').Router();
+const categoryRoutes = require('./category-routes');
+const productRoutes = require('./product-routes');
+const tagRoutes = require('./tag-routes');
+
+router.use('/categories', categoryRoutes);
+router.use('/products', productRoutes);
+router.use('/tags', tagRoutes);
+
+module.exports = router;
+
+--- File: routes/api/product-routes.js ---
+const router = require('express').Router();
+const { Product, Category, Tag, ProductTag } = require('../../models');
+
+// The `/api/products` endpoint
+
+// get all products
+router.get('/', (req, res) => {
+  // find all products
+  // be sure to include its associated Category and Tag data
+});
+
+// get one product
+router.get('/:id', (req, res) => {
+  // find a single product by its `id`
+  // be sure to include its associated Category and Tag data
+});
+
+// create new product
+router.post('/', (req, res) => {
+  /* req.body should look like this...
+    {
+      product_name: "Basketball",
+      price: 200.00,
+      stock: 3,
+      tagIds: [1, 2, 3, 4]
+    }
+  */
+  Product.create(req.body)
+    .then((product) => {
+      // if there's product tags, we need to create pairings to bulk create in the ProductTag model
+      if (req.body.tagIds.length) {
+        const productTagIdArr = req.body.tagIds.map((tag_id) => {
+          return {
+            product_id: product.id,
+            tag_id,
+          };
+        });
+        return ProductTag.bulkCreate(productTagIdArr);
+      }
+      // if no product tags, just respond
+      res.status(200).json(product);
+    })
+    .then((productTagIds) => res.status(200).json(productTagIds))
+    .catch((err) => {
+      console.log(err);
+      res.status(400).json(err);
+    });
+});
+
+// update product
+router.put('/:id', (req, res) => {
+  // update product data
+  Product.update(req.body, {
+    where: {
+      id: req.params.id,
+    },
+  })
+    .then((product) => {
+      if (req.body.tagIds && req.body.tagIds.length) {
+
+        ProductTag.findAll({
+          where: { product_id: req.params.id }
+        }).then((productTags) => {
+          // create filtered list of new tag_ids
+          const productTagIds = productTags.map(({ tag_id }) => tag_id);
+          const newProductTags = req.body.tagIds
+            .filter((tag_id) => !productTagIds.includes(tag_id))
+            .map((tag_id) => {
+              return {
+                product_id: req.params.id,
+                tag_id,
+              };
+            });
+
+          // figure out which ones to remove
+          const productTagsToRemove = productTags
+            .filter(({ tag_id }) => !req.body.tagIds.includes(tag_id))
+            .map(({ id }) => id);
+          // run both actions
+          return Promise.all([
+            ProductTag.destroy({ where: { id: productTagsToRemove } }),
+            ProductTag.bulkCreate(newProductTags),
+          ]);
+        });
+      }
+
+      return res.json(product);
+    })
+    .catch((err) => {
+      // console.log(err);
+      res.status(400).json(err);
+    });
+});
+
+router.delete('/:id', (req, res) => {
+  // delete one product by its `id` value
+});
+
+module.exports = router;
+
+--- File: routes/api/tag-routes.js ---
+const router = require('express').Router();
+const { Tag, Product, ProductTag } = require('../../models');
+
+// The `/api/tags` endpoint
+
+router.get('/', (req, res) => {
+  // find all tags
+  // be sure to include its associated Product data
+});
+
+router.get('/:id', (req, res) => {
+  // find a single tag by its `id`
+  // be sure to include its associated Product data
+});
+
+router.post('/', (req, res) => {
+  // create a new tag
+});
+
+router.put('/:id', (req, res) => {
+  // update a tag's name by its `id` value
+});
+
+router.delete('/:id', (req, res) => {
+  // delete on tag by its `id` value
+});
+
+module.exports = router;
+
+--- File: routes/index.js ---
+const router = require('express').Router();
+const apiRoutes = require('./api');
+
+router.use('/api', apiRoutes);
+
+router.use((req, res) => {
+  res.send("<h1>Wrong Route!</h1>")
+});
+
+module.exports = router;
+
+--- File: seeds/category-seeds.js ---
+const { Category } = require('../models');
+
+const categoryData = [
+  {
+    category_name: 'Shirts',
+  },
+  {
+    category_name: 'Shorts',
+  },
+  {
+    category_name: 'Music',
+  },
+  {
+    category_name: 'Hats',
+  },
+  {
+    category_name: 'Shoes',
+  },
+];
+
+const seedCategories = () => Category.bulkCreate(categoryData);
+
+module.exports = seedCategories;
+
+--- File: seeds/index.js ---
+const seedCategories = require('./category-seeds');
+const seedProducts = require('./product-seeds');
+const seedTags = require('./tag-seeds');
+const seedProductTags = require('./product-tag-seeds');
+
+const sequelize = require('../config/connection');
+
+const seedAll = async () => {
+  await sequelize.sync({ force: true });
+  console.log('\n----- DATABASE SYNCED -----\n');
+  await seedCategories();
+  console.log('\n----- CATEGORIES SEEDED -----\n');
+
+  await seedProducts();
+  console.log('\n----- PRODUCTS SEEDED -----\n');
+
+  await seedTags();
+  console.log('\n----- TAGS SEEDED -----\n');
+
+  await seedProductTags();
+  console.log('\n----- PRODUCT TAGS SEEDED -----\n');
+
+  process.exit(0);
+};
+
+seedAll();
+
+--- File: seeds/product-seeds.js ---
+const { Product } = require('../models');
+
+const productData = [
+  {
+    product_name: 'Plain T-Shirt',
+    price: 14.99,
+    stock: 14,
+    category_id: 1,
+  },
+  {
+    product_name: 'Running Sneakers',
+    price: 90.0,
+    stock: 25,
+    category_id: 5,
+  },
+  {
+    product_name: 'Branded Baseball Hat',
+    price: 22.99,
+    stock: 12,
+    category_id: 4,
+  },
+  {
+    product_name: 'Top 40 Music Compilation Vinyl Record',
+    price: 12.99,
+    stock: 50,
+    category_id: 3,
+  },
+  {
+    product_name: 'Cargo Shorts',
+    price: 29.99,
+    stock: 22,
+    category_id: 2,
+  },
+];
+
+const seedProducts = () => Product.bulkCreate(productData);
+
+module.exports = seedProducts;
+
+--- File: seeds/product-tag-seeds.js ---
+const { ProductTag } = require('../models');
+
+const productTagData = [
+  {
+    product_id: 1,
+    tag_id: 6,
+  },
+  {
+    product_id: 1,
+    tag_id: 7,
+  },
+  {
+    product_id: 1,
+    tag_id: 8,
+  },
+  {
+    product_id: 2,
+    tag_id: 6,
+  },
+  {
+    product_id: 3,
+    tag_id: 1,
+  },
+  {
+    product_id: 3,
+    tag_id: 3,
+  },
+  {
+    product_id: 3,
+    tag_id: 4,
+  },
+  {
+    product_id: 3,
+    tag_id: 5,
+  },
+  {
+    product_id: 4,
+    tag_id: 1,
+  },
+  {
+    product_id: 4,
+    tag_id: 2,
+  },
+  {
+    product_id: 4,
+    tag_id: 8,
+  },
+  {
+    product_id: 5,
+    tag_id: 3,
+  },
+];
+
+const seedProductTags = () => ProductTag.bulkCreate(productTagData);
+
+module.exports = seedProductTags;
+
+--- File: seeds/tag-seeds.js ---
+const { Tag } = require('../models');
+
+const tagData = [
+  {
+    tag_name: 'rock music',
+  },
+  {
+    tag_name: 'pop music',
+  },
+  {
+    tag_name: 'blue',
+  },
+  {
+    tag_name: 'red',
+  },
+  {
+    tag_name: 'green',
+  },
+  {
+    tag_name: 'white',
+  },
+  {
+    tag_name: 'gold',
+  },
+  {
+    tag_name: 'pop culture',
+  },
+];
+
+const seedTags = () => Tag.bulkCreate(tagData);
+
+module.exports = seedTags;
